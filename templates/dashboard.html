@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Live economic clearinghouse and security ledger for the AGSR-GDAC protocol. Monitor AI agent data access, threat neutralization, and revenue generation.">
+    <meta name="keywords" content="AI data monetization, Web3 clearinghouse, AGSR, GDAC, data sovereignty, AI agent security">
+    <title>GDAC | Sovereign Terminal</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header-panel">
+            <h1>GDAC / AGSR CLEARINGHOUSE</h1>
+            <div class="node-status">NODE: {{ node_location }} | STATUS: SECURE</div>
+        </header>
+
+        <div class="metrics-grid">
+            <div class="metric-box">
+                <span class="label">TOTAL INTENTS SCANNED</span>
+                <span class="value">{{ total_transactions }}</span>
+            </div>
+            <div class="metric-box">
+                <span class="label">REVENUE ACCRUED (ETH)</span>
+                <span class="value highlight">{{ total_revenue }}</span>
+            </div>
+            <div class="metric-box">
+                <span class="label">ATTACKS NEUTRALIZED</span>
+                <span class="value warning">{{ blocked_attacks }}</span>
+            </div>
+        </div>
+
+        <div class="ledger-panel">
+            <h2>LIVE PROTOCOL LEDGER</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>TIMESTAMP</th>
+                        <th>AGENT ID</th>
+                        <th>TARGET PROTOCOL</th>
+                        <th>FEE (ETH)</th>
+                        <th>STATUS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr class="{% if record['Status'] == 'BLOCKED' %}row-blocked{% else %}row-auth{% endif %}">
+                        <td>{{ record['Timestamp'] }}</td>
+                        <td class="mono">{{ record['Agent_ID'] }}</td>
+                        <td>{{ record['Action'] }}</td>
+                        <td>{{ record['Fee_Accrued_ETH'] }}</td>
+                        <td>{{ record['Status'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

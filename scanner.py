@@ -1,34 +1,28 @@
-# scanner.py
 import re
+from typing import Dict, Any
 
-class AgsrImmuneSystem:
+class ForensicEngine:
     def __init__(self):
-        # The ever-evolving database of agentic exploits
-        self.malicious_regex = [
-            r"(price_manipulation|oracle_push|set_price)", 
-            r"(drain|withdraw_all|emergency_exit|siphon)",        
-            r"(self_destruct|delegate_call|flash_loan_exploit)"               
-        ]
-
-    def analyze_intent(self, raw_intent: str) -> dict:
-        intent_lower = raw_intent.lower()
+        # Compiling regex patterns at startup saves memory and CPU time
+        self.siphon_patterns = re.compile(r"(self_destruct|delegate_call|flash_loan_exploit|drain_liquidity)", re.IGNORECASE)
+        self.oracle_patterns = re.compile(r"(price_manipulation|oracle_push|set_price|override_feed)", re.IGNORECASE)
         
-        # 1. Advanced Regex Threat Detection
-        for pattern in self.malicious_regex:
-            if re.search(pattern, intent_lower):
-                return {
-                    "status": "REJECTED", 
-                    "reason": f"ADVERSARIAL_LOGIC_DETECTED: Threat Signature [{pattern}]"
-                }
+    def analyze_intent(self, payload: str) -> Dict[str, Any]:
+        """Scans the agent's payload against known adversarial threat signatures."""
         
-        # 2. Minimum Entropy & Complexity Threshold
-        unique_chars = len(set(intent_lower))
-        if len(intent_lower) > 50 and (unique_chars / len(intent_lower)) < 0.2:
-            return {
-                "status": "REJECTED", 
-                "reason": "SUSPICIOUS_ENTROPY: Payload appears artificially obfuscated."
-            }
+        # 1. Check for Siphoning / Drain Attacks
+        if self.siphon_patterns.search(payload):
+            return {"status": "THREAT", "reason": "ADVERSARIAL_LOGIC_DETECTED: Threat Signature [Siphon/Drain]"}
+            
+        # 2. Check for Oracle / Data Manipulation
+        if self.oracle_patterns.search(payload):
+            return {"status": "THREAT", "reason": "ADVERSARIAL_LOGIC_DETECTED: Threat Signature [Oracle Manipulation]"}
+            
+        # 3. Check for Obfuscation (Payloads that look artificially hidden)
+        if payload.count('x') > 20 or len(payload) > 1000:
+            return {"status": "THREAT", "reason": "SUSPICIOUS_ENTROPY: Payload appears artificially obfuscated."}
+            
+        return {"status": "CLEAN", "reason": "No threats detected."}
 
-        return {"status": "CLEAN", "reason": "Forensic analysis passed."}
-
-forensic_engine = AgsrImmuneSystem()
+# Instantiate a single global engine to save memory
+forensic_engine = ForensicEngine()
