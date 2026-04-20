@@ -70,6 +70,19 @@ async def process_intent(intent: AgentIntent):
         checkpoint=settings.NODE_LOCATION
     )
 
+# --- DOCUMENTATION ROUTES ---
+@app.get("/whitepaper", response_class=HTMLResponse, tags=["Documentation"])
+async def render_whitepaper(request: Request):
+    return templates.TemplateResponse(
+        request=request, 
+        name="whitepaper.html",
+        context={
+            "request": request,
+            "node_location": settings.NODE_LOCATION, 
+            "version": settings.VERSION
+        }
+    )
+
 # --- GDAC VISUAL DASHBOARD ROUTE ---
 @app.get("/dashboard", response_class=HTMLResponse, tags=["GDAC Economics"])
 async def render_dashboard(request: Request):
@@ -85,7 +98,6 @@ async def render_dashboard(request: Request):
         total_revenue = 0.0
         blocked_attacks = 0
 
-    # CORRECTED TEMPLATE RESPONSE SYNTAX
     return templates.TemplateResponse(
         request=request, 
         name="dashboard.html", 
