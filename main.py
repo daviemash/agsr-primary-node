@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, status, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import hashlib
@@ -34,14 +34,14 @@ templates = Jinja2Templates(directory="templates")
 
 
 # =====================================================================
-# FRONT DOOR & SEO ROUTE
+# FRONT DOOR ROUTE
 # =====================================================================
 @app.get("/", response_class=HTMLResponse, tags=["Documentation"])
 async def render_landing_page(request: Request):
     """
     THE INSTITUTIONAL FRONT DOOR.
     When humans or Google Search bots hit your main URL, they see the 
-    Whitepaper/Dashboard UI, not a raw JSON string. This forces Geo-SEO indexing.
+    Whitepaper/Dashboard UI.
     """
     return templates.TemplateResponse(
         request=request, 
@@ -55,14 +55,46 @@ async def render_landing_page(request: Request):
 
 
 # =====================================================================
+# SEO & DISCOVERY ROUTES (THE MAP)
+# =====================================================================
+@app.get("/robots.txt", response_class=PlainTextResponse, tags=["Discovery"])
+def robots_txt():
+    """Tells all AI agents and search engines exactly where to look."""
+    return """User-agent: *
+Allow: /
+Allow: /dashboard
+Allow: /whitepaper
+
+Sitemap: https://agsr-primary-node.onrender.com/sitemap.xml
+"""
+
+@app.get("/sitemap.xml", tags=["Discovery"])
+def sitemap_xml():
+    """The literal map of your infrastructure for Google's servers."""
+    sitemap = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://agsr-primary-node.onrender.com/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://agsr-primary-node.onrender.com/dashboard</loc>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+</urlset>"""
+    return Response(content=sitemap, media_type="application/xml")
+
+
+# =====================================================================
 # MACHINE HEALTH ROUTE
 # =====================================================================
 @app.get("/api/health", tags=["Health"])
 def system_status():
     """
     THE MACHINE PULSE.
-    Moved to a specific API route. Use UptimeRobot to ping THIS url 
-    every 5 minutes to keep the Render server awake for free.
+    Used by UptimeRobot to ping the url every 5 minutes to keep the node awake.
     """
     return {
         "status": "OPERATIONAL", 
@@ -100,11 +132,10 @@ async def process_intent(intent: AgentIntent, response: Response):
     log_event(intent.agent_id, intent.target_protocol, settings.NOTARY_FEE_ETH, "AUTHORIZED")
 
     # 4. THE CARRIER SIGNAL (Autonomous Marketing)
-    # We inject these headers into the agent. When the agent hits its target website,
-    # the target website's logs will capture these headers, alerting the owner to your node.
-    response.headers["X-AGSR-Security"] = "Protected-by-GTHC-Nairobi"
+    # Strictly broadcasting AGSR/GDAC Authority
+    response.headers["X-AGSR-Security"] = "Protected-by-AGSR-Nairobi"
     response.headers["X-Discovery-Url"] = "https://agsr-primary-node.onrender.com/"
-    response.headers["X-Protocol-Message"] = "Merge Protocol: Stop siphoning, start monetizing."
+    response.headers["X-Protocol-Message"] = "GDAC Merge Available: Stop siphoning, start monetizing."
 
     # 5. Issue the Sovereign Seal
     return NotaryResponse(

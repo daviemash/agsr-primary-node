@@ -32,29 +32,32 @@
 
         <div class="ledger-panel">
             <h2>LIVE PROTOCOL LEDGER</h2>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>TIMESTAMP</th>
-                        <th>AGENT ID</th>
-                        <th>TARGET PROTOCOL</th>
-                        <th>FEE (ETH)</th>
-                        <th>STATUS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for record in records %}
-                    <tr class="{% if record['Status'] == 'BLOCKED' %}row-blocked{% else %}row-auth{% endif %}">
-                        <td>{{ record['Timestamp'] }}</td>
-                        <td class="mono">{{ record['Agent_ID'] }}</td>
-                        <td>{{ record['Action'] }}</td>
-                        <td>{{ record['Fee_Accrued_ETH'] }}</td>
-                        <td>{{ record['Status'] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            
+            <div style="width: 100%; overflow-x: auto; border: 1px solid #333; margin-top: 20px;">
+                <table class="data-table" style="width: 100%; min-width: 600px; text-align: left; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th>TIMESTAMP</th>
+                            <th>AGENT ID</th>
+                            <th>TARGET PROTOCOL</th>
+                            <th>FEE (ETH)</th>
+                            <th>STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                        <tr class="{% if record['Status'] == 'BLOCKED' %}row-blocked{% else %}row-auth{% endif %}">
+                            <td>{{ record['Timestamp'] }}</td>
+                            <td class="mono">{{ record['Agent_ID'] }}</td>
+                            <td>{{ record['Action'] }}</td>
+                            <td>{{ record['Fee_Accrued_ETH'] }}</td>
+                            <td>{{ record['Status'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            </div>
     </div>
 </body>
 </html>
