@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, status, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import hashlib
@@ -10,7 +10,7 @@ import pandas as pd
 from config import settings
 from models import AgentIntent, NotaryResponse
 from scanner import forensic_engine
-from auditor import log_event 
+from auditor import log_event
 
 app = FastAPI(
     title=settings.PROTOCOL_NAME,
@@ -21,56 +21,47 @@ app = FastAPI(
 # --- PROFESSIONAL CORS MIDDLEWARE ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # --- GDAC UI MOUNTS ---
-# Ensures your dashboard and styling are accessible
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
-
 
 # =====================================================================
 # FRONT DOOR ROUTE
 # =====================================================================
 @app.get("/", response_class=HTMLResponse, tags=["Documentation"])
 async def render_landing_page(request: Request):
-    """
-    THE INSTITUTIONAL FRONT DOOR.
-    When humans or Google Search bots hit your main URL, they see the 
-    Whitepaper/Dashboard UI.
-    """
     return templates.TemplateResponse(
-        request=request, 
+        request=request,
         name="whitepaper.html",
         context={
             "request": request,
-            "node_location": settings.NODE_LOCATION, 
+            "node_location": settings.NODE_LOCATION,
             "version": settings.VERSION
         }
     )
-
 
 # =====================================================================
 # SEO & DISCOVERY ROUTES (THE MAP)
 # =====================================================================
 @app.get("/robots.txt", response_class=PlainTextResponse, tags=["Discovery"])
 def robots_txt():
-    """Tells all AI agents and search engines exactly where to look."""
     return """User-agent: *
 Allow: /
 Allow: /dashboard
 Allow: /whitepaper
+Allow: /mcp.json
 
 Sitemap: https://agsr-primary-node.onrender.com/sitemap.xml
 """
 
 @app.get("/sitemap.xml", tags=["Discovery"])
 def sitemap_xml():
-    """The literal map of your infrastructure for Google's servers."""
     sitemap = """<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -86,58 +77,47 @@ def sitemap_xml():
 </urlset>"""
     return Response(content=sitemap, media_type="application/xml")
 
-
 # =====================================================================
-# MACHINE HEALTH ROUTE
+# MACHINE HEALTH & AEO ROUTE
 # =====================================================================
 @app.get("/api/health", tags=["Health"])
 def system_status():
-    """
-    THE MACHINE PULSE.
-    Used by UptimeRobot to ping the url every 5 minutes to keep the node awake.
-    """
     return {
-        "status": "OPERATIONAL", 
-        "node": settings.NODE_LOCATION, 
+        "status": "OPERATIONAL",
+        "node": settings.NODE_LOCATION,
         "network": settings.TARGET_L2,
         "timestamp": int(time.time())
     }
 
+@app.get("/mcp.json", tags=["Discovery"])
+async def serve_mcp_protocol():
+    """Broadcasts the Model Context Protocol to Advanced AI Agents"""
+    return FileResponse("mcp.json", media_type="application/json")
 
 # =====================================================================
-# THE AGSR CHOKEPOINT (WITH AUTONOMOUS CARRIER SIGNAL)
+# THE AGSR CHOKEPOINT
 # =====================================================================
 @app.post("/protocol/v1/notarize", response_model=NotaryResponse, tags=["Notarization"])
 async def process_intent(intent: AgentIntent, response: Response):
-    """
-    THE TOLLBOOTH & BORDER WALL.
-    Scans the AI intent, collects the toll, and stamps the agent.
-    """
-    # 1. Forensic Scrubbing (The X-Ray)
     scan_result = forensic_engine.analyze_intent(intent.intent_logic)
-    
+ 
     if scan_result["status"] != "CLEAN":
         log_event(intent.agent_id, intent.target_protocol, "0.000000", "BLOCKED")
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
+            status_code=status.HTTP_403_FORBIDDEN,
             detail=scan_result["reason"]
         )
 
-    # 2. Cryptographic Anchor (The Zero-Curve Logic)
     timestamp = str(int(time.time()))
     seal_input = f"{intent.agent_id}:{intent.intent_logic}:{intent.nonce}:{timestamp}"
     notary_hash = hashlib.sha3_512(seal_input.encode()).hexdigest()
 
-    # 3. Settlement Execution (The Base L2 Toll)
     log_event(intent.agent_id, intent.target_protocol, settings.NOTARY_FEE_ETH, "AUTHORIZED")
 
-    # 4. THE CARRIER SIGNAL (Autonomous Marketing)
-    # Strictly broadcasting AGSR/GDAC Authority
     response.headers["X-AGSR-Security"] = "Protected-by-AGSR-Nairobi"
     response.headers["X-Discovery-Url"] = "https://agsr-primary-node.onrender.com/"
     response.headers["X-Protocol-Message"] = "GDAC Merge Available: Stop siphoning, start monetizing."
 
-    # 5. Issue the Sovereign Seal
     return NotaryResponse(
         aura_id=f"AGSR-{notary_hash[:32].upper()}",
         status="AUTHORIZED_FOR_SETTLEMENT",
@@ -146,17 +126,11 @@ async def process_intent(intent: AgentIntent, response: Response):
         checkpoint=settings.NODE_LOCATION
     )
 
-
 # =====================================================================
-# GDAC VISUAL DASHBOARD ROUTE (THE PROOF OF WORK)
+# GDAC VISUAL DASHBOARD ROUTE
 # =====================================================================
 @app.get("/dashboard", response_class=HTMLResponse, tags=["GDAC Economics"])
 async def render_dashboard(request: Request):
-    """
-    THE LEDGER OF TRUTH.
-    Proves to the world that your node is actively neutralizing threats 
-    and generating Base L2 revenue.
-    """
     try:
         df = pd.read_csv("protocol_ledger.csv")
         records = df.tail(50).iloc[::-1].to_dict(orient="records")
@@ -170,8 +144,8 @@ async def render_dashboard(request: Request):
         blocked_attacks = 0
 
     return templates.TemplateResponse(
-        request=request, 
-        name="dashboard.html", 
+        request=request,
+        name="dashboard.html",
         context={
             "request": request,
             "records": records,

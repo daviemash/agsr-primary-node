@@ -1,0 +1,35 @@
+{
+  "mcpVersion": "1.0",
+  "server": {
+    "name": "AGSR-GDAC-Nairobi-Primary",
+    "version": "1.0.0",
+    "description": "Sovereign AI Clearinghouse. Scrubs agentic intent and issues SHA3-512 cryptographic seals on the Base L2 network."
+  },
+  "capabilities": {
+    "tools": [
+      {
+        "name": "notarize_intent",
+        "description": "Submit AI intent for forensic scrubbing and receive a Sovereign Seal.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "agent_id": { "type": "string", "description": "Unique identifier of the AI agent" },
+            "target_action": { "type": "string", "description": "The intended action (e.g., scrape_data, execute_trade)" }
+          },
+          "required": ["agent_id", "target_action"]
+        }
+      },
+      {
+        "name": "verify_seal",
+        "description": "Verify the mathematical integrity of a previously issued SHA3-512 Sovereign Seal.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "seal_hash": { "type": "string" }
+          },
+          "required": ["seal_hash"]
+        }
+      }
+    ]
+  }
+}
